@@ -1,0 +1,543 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Банк Добрых Дел</title>
+    <style>
+        :root {
+            --primary: #4F46E5;
+            --primary-hover: #4338CA;
+            --bg: #F3F4F6;
+            --card: #FFFFFF;
+            --text: #1F2937;
+            --muted: #6B7280;
+            --success: #10B981;
+            --warning: #F59E0B;
+            --danger: #EF4444;
+        }
+        * { box-sizing: border-box; font-family: 'Segoe UI', system-ui, sans-serif; }
+        body { margin: 0; background: var(--bg); color: var(--text); padding-bottom: 40px; }
+        header {
+            background: var(--primary); color: white; padding: 16px 20px;
+            display: flex; justify-content: space-between; align-items: center;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        header h1 { margin: 0; font-size: 1.25rem; }
+        .container { max-width: 800px; margin: 20px auto; padding: 0 15px; }
+        .card {
+            background: var(--card); border-radius: 12px; padding: 20px;
+            margin-bottom: 16px; box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+        }
+        .btn {
+            background: var(--primary); color: white; border: none; padding: 10px 16px;
+            border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 0.95rem;
+            transition: 0.2s;
+        }
+        .btn:hover { background: var(--primary-hover); }
+        .btn-success { background: var(--success); }
+        .btn-danger { background: var(--danger); }
+        .btn-outline { background: transparent; border: 1px solid #D1D5DB; color: var(--text); }
+        .btn-sm { padding: 6px 12px; font-size: 0.85rem; }
+        input, select, textarea {
+            width: 100%; padding: 10px; border: 1px solid #D1D5DB; border-radius: 8px;
+            margin-top: 6px; margin-bottom: 12px; font-size: 1rem;
+        }
+        .tabs { display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap; }
+        .tab {
+            padding: 10px 16px; background: white; border-radius: 8px; cursor: pointer;
+            font-weight: 600; border: 1px solid #E5E7EB;
+        }
+        .tab.active { background: var(--primary); color: white; border-color: var(--primary); }
+        .badge {
+            display: inline-block; padding: 4px 10px; border-radius: 20px;
+            font-size: 0.8rem; font-weight: 700; background: #EEF2FF; color: var(--primary);
+        }
+        .badge-auto { background: #D1FAE5; color: #065F46; }
+        .badge-manual { background: #FEF3C7; color: #92400E; }
+        .balance-box {
+            background: linear-gradient(135deg, #4F46E5, #7C3AED); color: white;
+            padding: 20px; border-radius: 12px; margin-bottom: 20px;
+            display: flex; justify-content: space-between; align-items: center;
+        }
+        .balance-num { font-size: 2rem; font-weight: 800; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; }
+        .hidden { display: none !important; }
+    </style>
+</head>
+<body>
+
+<header>
+    <h1>🌟 Банк Добрых Дел</h1>
+    <div>
+        <button class="btn btn-sm" style="background: rgba(255,255,255,0.2);" onclick="toggleTeacherLogin()">Вход для учителя</button>
+    </div>
+</header>
+
+<div class="container">
+    <!-- Экран входа ученика -->
+    <div id="studentLoginView" class="card">
+        <h2>Привет! Введи свои данные</h2>
+        <p style="color: var(--muted);">Укажи имя и фамилию, чтобы получать <b>Баллы добра</b> и обменивать их на награды.</p>
+        <label>Имя и Фамилия (например: Анна Смирнова)</label>
+        <input type="text" id="studentNameInput" placeholder="Иван Иванов">
+        <button class="btn" onclick="loginStudent()">Войти в кабинет</button>
+    </div>
+
+    <!-- Вход для учителя -->
+    <div id="teacherLoginView" class="card hidden">
+        <h2>Панель учителя</h2>
+        <label>Введите пароль учителя (по умолчанию: <code>12345</code>)</label>
+        <input type="password" id="teacherPassInput" placeholder="Пароль">
+        <button class="btn" onclick="loginTeacher()">Войти как учитель</button>
+        <button class="btn btn-outline" onclick="showStudentView()">Отмена</button>
+    </div>
+
+    <!-- Кабинет ученика -->
+    <div id="studentDashboard" class="hidden">
+        <div class="balance-box">
+            <div>
+                <div style="opacity: 0.9; font-size: 0.9rem;">Ученик: <b id="displayStudentName"></b></div>
+                <div style="margin-top: 4px;">Твой баланс:</div>
+                <div class="balance-num"><span id="studentBalance">0</span> ✨</div>
+                <div style="font-size: 0.85rem; opacity: 0.9;">Баллов добра</div>
+            </div>
+            <button class="btn btn-sm" style="background: rgba(255,255,255,0.2);" onclick="logoutStudent()">Сменить ученика</button>
+        </div>
+
+        <div class="tabs">
+            <div class="tab active" onclick="switchStudentTab('tasks', this)">📋 Добрые дела</div>
+            <div class="tab" onclick="switchStudentTab('shop', this)">🎁 Обмен баллов</div>
+            <div class="tab" onclick="switchStudentTab('history', this)">🕒 Мои заявки</div>
+        </div>
+
+        <div id="tabTasks" class="grid"></div>
+        <div id="tabShop" class="grid hidden"></div>
+        <div id="tabHistory" class="hidden"></div>
+    </div>
+
+    <!-- Кабинет учителя -->
+    <div id="teacherDashboard" class="hidden">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+            <h2 style="margin: 0;">👩‍🏫 Управление классом</h2>
+            <button class="btn btn-outline btn-sm" onclick="showStudentView()">Выйти из панели учителя</button>
+        </div>
+
+        <div class="tabs">
+            <div class="tab active" onclick="switchTeacherTab('moderation', this)">✅ Проверка и покупки</div>
+            <div class="tab" onclick="switchTeacherTab('manageTasks', this)">➕ Добавить задание</div>
+            <div class="tab" onclick="switchTeacherTab('manageRewards', this)">🏆 Добавить награду</div>
+            <div class="tab" onclick="switchTeacherTab('studentsList', this)">👥 Ученики</div>
+        </div>
+
+        <!-- Вкладка проверки -->
+        <div id="tTabModeration">
+            <h3>Отчеты на проверке</h3>
+            <div id="pendingSubmissions"></div>
+            <h3>Запросы на обмен наград</h3>
+            <div id="pendingPurchases"></div>
+        </div>
+
+        <!-- Вкладка добавления задания -->
+        <div id="tTabManageTasks" class="hidden">
+            <div class="card">
+                <h3>Новое доброе дело</h3>
+                <label>Название задания</label>
+                <input type="text" id="newTaskTitle" placeholder="Например: Помочь однокласснику с темой">
+                <label>Описание</label>
+                <textarea id="newTaskDesc" rows="2" placeholder="Что именно нужно сделать?"></textarea>
+                <label>Награда (Баллы добра)</label>
+                <input type="number" id="newTaskPoints" value="10">
+                <label>Способ проверки</label>
+                <select id="newTaskType" onchange="toggleSecretCodeField()">
+                    <option value="manual">Ручная проверка (ученик пишет отчет, вы подтверждаете)</option>
+                    <option value="auto">Автоматическая (по секретному кодовому слову)</option>
+                </select>
+                <div id="secretCodeBox" class="hidden">
+                    <label>Секретное слово для автоматического зачета</label>
+                    <input type="text" id="newTaskCode" placeholder="Например: ДОБРОТА2026">
+                </div>
+                <button class="btn" onclick="addTask()">Опубликовать задание</button>
+            </div>
+            <h3>Активные задания</h3>
+            <div id="teacherTasksList"></div>
+        </div>
+
+        <!-- Вкладка добавления награды -->
+        <div id="tTabManageRewards" class="hidden">
+            <div class="card">
+                <h3>Новая награда в магазин</h3>
+                <label>Название награды</label>
+                <input type="text" id="newRewardTitle" placeholder="Например: Пятерка по предмету или Освобождение от ДЗ">
+                <label>Описание / условия</label>
+                <input type="text" id="newRewardDesc" placeholder="Действует на один любой урок">
+                <label>Стоимость (Баллов добра)</label>
+                <input type="number" id="newRewardCost" value="30">
+                <button class="btn" onclick="addReward()">Добавить в магазин</button>
+            </div>
+            <h3>Список наград</h3>
+            <div id="teacherRewardsList"></div>
+        </div>
+
+        <!-- Список учеников -->
+        <div id="tTabStudentsList" class="hidden">
+            <div id="teacherStudentsList"></div>
+        </div>
+    </div>
+</div>
+
+<script>
+    const FIREBASE_URL = "https://klass-dobro-default-rtdb.firebaseio.com"; 
+    const TEACHER_PASSWORD = "12345";
+
+    let appData = {
+        students: {},
+        tasks: [
+            { id: 't1', title: 'Помощь однокласснику', desc: 'Объясни сложную тему товарищу или помоги донести тяжелый портфель.', points: 15, type: 'manual', code: '' },
+            { id: 't2', title: 'Секретный код доброты', desc: 'Узнай кодовое слово недели у учителя за хороший поступок и введи его здесь.', points: 10, type: 'auto', code: 'ДОБРО' }
+        ],
+        rewards: [
+            { id: 'r1', title: 'Оценка «5» по предмету', desc: 'Выставляется в журнал за работу на уроке.', cost: 50 },
+            { id: 'r2', title: 'Освобождение от домашнего задания', desc: 'Можно использовать один раз вместо письменного ДЗ.', cost: 30 },
+            { id: 'r3', title: 'Освобождение от ответа у доски', desc: 'Иммунитет на один урок.', cost: 25 }
+        ],
+        submissions: [],
+        purchases: []
+    };
+
+    let currentStudent = localStorage.getItem('dobro_student') || '';
+
+    async function loadData() {
+        try {
+            const res = await fetch(`${FIREBASE_URL}/data.json`);
+            const data = await res.json();
+            if (data) {
+                appData = {
+                    students: data.students || {},
+                    tasks: data.tasks || [],
+                    rewards: data.rewards || [],
+                    submissions: data.submissions || [],
+                    purchases: data.purchases || []
+                };
+            } else {
+                await saveData();
+            }
+        } catch (e) {
+            console.error("Ошибка загрузки базы:", e);
+        }
+    }
+
+    async function saveData() {
+        try {
+            await fetch(`${FIREBASE_URL}/data.json`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(appData)
+            });
+            renderAll();
+        } catch (e) {
+            alert("Ошибка сохранения в сеть. Проверьте интернет.");
+        }
+    }
+
+    async function loginStudent() {
+        const rawName = document.getElementById('studentNameInput').value.trim();
+        if (rawName.length < 3) return alert('Пожалуйста, введи имя и фамилию!');
+        const formattedName = rawName.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' ');
+        
+        await loadData();
+        if (!appData.students[formattedName]) {
+            appData.students[formattedName] = { balance: 0 };
+            await saveData();
+        }
+        currentStudent = formattedName;
+        localStorage.setItem('dobro_student', currentStudent);
+        showStudentView();
+    }
+
+    function logoutStudent() {
+        currentStudent = '';
+        localStorage.removeItem('dobro_student');
+        document.getElementById('studentDashboard').classList.add('hidden');
+        document.getElementById('studentLoginView').classList.remove('hidden');
+    }
+
+    function showStudentView() {
+        document.getElementById('teacherLoginView').classList.add('hidden');
+        document.getElementById('teacherDashboard').classList.add('hidden');
+        if (currentStudent) {
+            document.getElementById('studentLoginView').classList.add('hidden');
+            document.getElementById('studentDashboard').classList.remove('hidden');
+            renderAll();
+        } else {
+            document.getElementById('studentLoginView').classList.remove('hidden');
+        }
+    }
+
+    function toggleTeacherLogin() {
+        document.getElementById('studentLoginView').classList.add('hidden');
+        document.getElementById('studentDashboard').classList.add('hidden');
+        document.getElementById('teacherLoginView').classList.remove('hidden');
+    }
+
+    async function loginTeacher() {
+        const pass = document.getElementById('teacherPassInput').value;
+        if (pass === TEACHER_PASSWORD) {
+            await loadData();
+            document.getElementById('teacherLoginView').classList.add('hidden');
+            document.getElementById('teacherDashboard').classList.remove('hidden');
+            renderAll();
+        } else {
+            alert('Неверный пароль!');
+        }
+    }
+
+    async function completeTask(taskId) {
+        await loadData();
+        const task = appData.tasks.find(t => t.id === taskId);
+        if (!task) return;
+
+        if (task.type === 'auto') {
+            const answer = prompt(`Задание: "${task.title}"
+Введите секретное слово для автоматической проверки:`);
+            if (!answer) return;
+            if (answer.trim().toLowerCase() === task.code.trim().toLowerCase()) {
+                appData.students[currentStudent].balance += Number(task.points);
+                appData.submissions.unshift({
+                    id: 's' + Date.now(),
+                    student: currentStudent,
+                    taskTitle: task.title,
+                    points: task.points,
+                    report: 'Автоматическая проверка по коду',
+                    status: 'approved'
+                });
+                await saveData();
+                alert(`🎉 Верно! Тебе начислено +${task.points} Баллов добра!`);
+            } else {
+                alert('❌ Неверное кодовое слово. Попробуй еще раз!');
+            }
+        } else {
+            const report = prompt(`Опиши коротко, как ты выполнил(а) задание "${task.title}":`);
+            if (!report || report.trim().length < 3) return;
+            appData.submissions.unshift({
+                id: 's' + Date.now(),
+                student: currentStudent,
+                taskTitle: task.title,
+                points: task.points,
+                report: report.trim(),
+                status: 'pending'
+            });
+            await saveData();
+            alert('✅ Отчет отправлен учителю! Баллы начислятся после проверки.');
+        }
+    }
+
+    async function buyReward(rewardId) {
+        await loadData();
+        const reward = appData.rewards.find(r => r.id === rewardId);
+        const student = appData.students[currentStudent];
+        if (!reward || !student) return;
+
+        if (student.balance < reward.cost) {
+            return alert('Недостаточно Баллов добра! Выполни еще несколько заданий.');
+        }
+        if (!confirm(`Обменять ${reward.cost} Баллов добра на "${reward.title}"?`)) return;
+
+        student.balance -= Number(reward.cost);
+        appData.purchases.unshift({
+            id: 'p' + Date.now(),
+            student: currentStudent,
+            rewardTitle: reward.title,
+            cost: reward.cost,
+            status: 'new'
+        });
+        await saveData();
+        alert(`🎁 Поздравляем! Ты получил(а): "${reward.title}". Учитель уже видит твою заявку!`);
+    }
+
+    async function approveSubmission(subId) {
+        await loadData();
+        const sub = appData.submissions.find(s => s.id === subId);
+        if (sub && sub.status === 'pending') {
+            sub.status = 'approved';
+            if (!appData.students[sub.student]) appData.students[sub.student] = { balance: 0 };
+            appData.students[sub.student].balance += Number(sub.points);
+            await saveData();
+        }
+    }
+
+    async function rejectSubmission(subId) {
+        await loadData();
+        const sub = appData.submissions.find(s => s.id === subId);
+        if (sub) {
+            sub.status = 'rejected';
+            await saveData();
+        }
+    }
+
+    async function markPurchaseDone(pId) {
+        await loadData();
+        const p = appData.purchases.find(x => x.id === pId);
+        if (p) {
+            p.status = 'done';
+            await saveData();
+        }
+    }
+
+    function toggleSecretCodeField() {
+        const type = document.getElementById('newTaskType').value;
+        document.getElementById('secretCodeBox').classList.toggle('hidden', type !== 'auto');
+    }
+
+    async function addTask() {
+        const title = document.getElementById('newTaskTitle').value.trim();
+        const desc = document.getElementById('newTaskDesc').value.trim();
+        const points = Number(document.getElementById('newTaskPoints').value);
+        const type = document.getElementById('newTaskType').value;
+        const code = document.getElementById('newTaskCode').value.trim();
+
+        if (!title || !points) return alert('Заполните название и количество баллов!');
+        if (type === 'auto' && !code) return alert('Укажите секретное слово для автопроверки!');
+
+        await loadData();
+        appData.tasks.unshift({ id: 't' + Date.now(), title, desc, points, type, code });
+        await saveData();
+        document.getElementById('newTaskTitle').value = '';
+        document.getElementById('newTaskDesc').value = '';
+        document.getElementById('newTaskCode').value = '';
+        alert('Задание опубликовано!');
+    }
+
+    async function deleteTask(id) {
+        if (!confirm('Удалить это задание?')) return;
+        await loadData();
+        appData.tasks = appData.tasks.filter(t => t.id !== id);
+        await saveData();
+    }
+
+    async function addReward() {
+        const title = document.getElementById('newRewardTitle').value.trim();
+        const desc = document.getElementById('newRewardDesc').value.trim();
+        const cost = Number(document.getElementById('newRewardCost').value);
+        if (!title || !cost) return alert('Заполните название и стоимость!');
+
+        await loadData();
+        appData.rewards.unshift({ id: 'r' + Date.now(), title, desc, cost });
+        await saveData();
+        document.getElementById('newRewardTitle').value = '';
+        document.getElementById('newRewardDesc').value = '';
+        alert('Награда добавлена в магазин!');
+    }
+
+    async function deleteReward(id) {
+        if (!confirm('Удалить эту награду?')) return;
+        await loadData();
+        appData.rewards = appData.rewards.filter(r => r.id !== id);
+        await saveData();
+    }
+
+    function switchStudentTab(tab, el) {
+        document.querySelectorAll('#studentDashboard .tab').forEach(t => t.classList.remove('active'));
+        el.classList.add('active');
+        document.getElementById('tabTasks').classList.toggle('hidden', tab !== 'tasks');
+        document.getElementById('tabShop').classList.toggle('hidden', tab !== 'shop');
+        document.getElementById('tabHistory').classList.toggle('hidden', tab !== 'history');
+    }
+
+    function switchTeacherTab(tab, el) {
+        document.querySelectorAll('#teacherDashboard .tab').forEach(t => t.classList.remove('active'));
+        el.classList.add('active');
+        document.getElementById('tTabModeration').classList.toggle('hidden', tab !== 'moderation');
+        document.getElementById('tTabManageTasks').classList.toggle('hidden', tab !== 'manageTasks');
+        document.getElementById('tTabManageRewards').classList.toggle('hidden', tab !== 'manageRewards');
+        document.getElementById('tTabStudentsList').classList.toggle('hidden', tab !== 'studentsList');
+    }
+
+    function renderAll() {
+        if (currentStudent && appData.students[currentStudent]) {
+            document.getElementById('displayStudentName').textContent = currentStudent;
+            document.getElementById('studentBalance').textContent = appData.students[currentStudent].balance;
+        }
+
+        document.getElementById('tabTasks').innerHTML = appData.tasks.map(t => `
+            <div class="card">
+                <div style="display:flex; justify-content:space-between; align-items:start;">
+                    <span class="badge ${t.type === 'auto' ? 'badge-auto' : 'badge-manual'}">
+                        ${t.type === 'auto' ? '⚡ Автопроверка' : '👩‍🏫 Проверка учителем'}
+                    </span>
+                    <b>+${t.points} ✨</b>
+                </div>
+                <h3 style="margin: 10px 0 6px;">${t.title}</h3>
+                <p style="color: var(--muted); font-size: 0.9rem; margin-bottom: 16px;">${t.desc}</p>
+                <button class="btn" style="width:100%" onclick="completeTask('${t.id}')">Выполнить</button>
+            </div>
+        `).join('') || '<p>Пока нет активных заданий.</p>';
+
+        document.getElementById('tabShop').innerHTML = appData.rewards.map(r => `
+            <div class="card">
+                <div class="badge">Стоимость: ${r.cost} ✨</div>
+                <h3 style="margin: 10px 0 6px;">${r.title}</h3>
+                <p style="color: var(--muted); font-size: 0.9rem; margin-bottom: 16px;">${r.desc}</p>
+                <button class="btn btn-success" style="width:100%" onclick="buyReward('${r.id}')">Обменять баллы</button>
+            </div>
+        `).join('') || '<p>Магазин пока пуст.</p>';
+
+        const mySubs = appData.submissions.filter(s => s.student === currentStudent);
+        const myPurchases = appData.purchases.filter(p => p.student === currentStudent);
+        document.getElementById('tabHistory').innerHTML = `
+            <h3>Мои награды</h3>
+            ${myPurchases.map(p => `<div class="card">🎁 <b>${p.rewardTitle}</b> (-${p.cost} ✨) — ${p.status === 'done' ? '✅ Выдано учителем' : '⏳ Ожидает выдачи'}</div>`).join('') || '<p style="color:var(--muted)">Ты еще не обменивал баллы.</p>'}
+            <h3>Мои выполненные задания</h3>
+            ${mySubs.map(s => `<div class="card">📋 <b>${s.taskTitle}</b> (+${s.points} ✨)<br><small>${s.report}</small><br>Статус: <b>${s.status === 'approved' ? '✅ Зачтено' : s.status === 'rejected' ? '❌ Отклонено' : '⏳ На проверке'}</b></div>`).join('') || '<p style="color:var(--muted)">Заявок пока нет.</p>'}
+        `;
+
+        const pending = appData.submissions.filter(s => s.status === 'pending');
+        document.getElementById('pendingSubmissions').innerHTML = pending.map(s => `
+            <div class="card">
+                <b>${s.student}</b> выполнил(а): <b>${s.taskTitle}</b> (+${s.points} ✨)
+                <p style="background:#F9FAFB; padding:10px; border-radius:8px; margin:8px 0;">«${s.report}»</p>
+                <button class="btn btn-success btn-sm" onclick="approveSubmission('${s.id}')">Засчитать (+${s.points})</button>
+                <button class="btn btn-danger btn-sm" onclick="rejectSubmission('${s.id}')">Отклонить</button>
+            </div>
+        `).join('') || '<p style="color:var(--muted)">Новых отчетов на проверку нет.</p>';
+
+        const newPurchases = appData.purchases.filter(p => p.status === 'new');
+        document.getElementById('pendingPurchases').innerHTML = newPurchases.map(p => `
+            <div class="card" style="border-left: 4px solid var(--success);">
+                🎉 <b>${p.student}</b> обменял(а) <b>${p.cost} ✨</b> на: <b>${p.rewardTitle}</b>
+                <div style="margin-top:10px;">
+                    <button class="btn btn-sm" onclick="markPurchaseDone('${p.id}')">Отметить как выданное</button>
+                </div>
+            </div>
+        `).join('') || '<p style="color:var(--muted)">Новых покупок нет.</p>';
+
+        document.getElementById('teacherTasksList').innerHTML = appData.tasks.map(t => `
+            <div class="card" style="display:flex; justify-content:space-between; align-items:center;">
+                <div><b>${t.title}</b> (+${t.points} ✨) <small>[${t.type === 'auto' ? 'Код: ' + t.code : 'Ручная'}]</small></div>
+                <button class="btn btn-danger btn-sm" onclick="deleteTask('${t.id}')">Удалить</button>
+            </div>
+        `).join('');
+
+        document.getElementById('teacherRewardsList').innerHTML = appData.rewards.map(r => `
+            <div class="card" style="display:flex; justify-content:space-between; align-items:center;">
+                <div><b>${r.title}</b> (${r.cost} ✨)</div>
+                <button class="btn btn-danger btn-sm" onclick="deleteReward('${r.id}')">Удалить</button>
+            </div>
+        `).join('');
+
+        const studentNames = Object.keys(appData.students);
+        document.getElementById('teacherStudentsList').innerHTML = studentNames.map(name => `
+            <div class="card" style="display:flex; justify-content:space-between;">
+                <span>👤 <b>${name}</b></span>
+                <span>Баланс: <b>${appData.students[name].balance} ✨</b></span>
+            </div>
+        `).join('') || '<p style="color:var(--muted)">Пока никто из учеников не заходил.</p>';
+    }
+
+    (async function init() {
+        await loadData();
+        showStudentView();
+    })();
+</script>
+</body>
+</html>
